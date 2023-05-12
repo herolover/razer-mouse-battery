@@ -5,23 +5,28 @@
 #include <iostream>
 #include <thread>
 
-union transaction_id_union {
+union transaction_id_union
+{
     unsigned char id;
-    struct transaction_parts {
+    struct transaction_parts
+    {
         unsigned char device : 3;
         unsigned char id : 5;
     } parts;
 };
 
-union command_id_union {
+union command_id_union
+{
     unsigned char id;
-    struct command_id_parts {
+    struct command_id_parts
+    {
         unsigned char direction : 1;
         unsigned char id : 7;
     } parts;
 };
 
-struct razer_report {
+struct razer_report
+{
     unsigned char status;
     union transaction_id_union transaction_id; /* */
     unsigned short remaining_packets; /* Big Endian */
@@ -112,7 +117,12 @@ bool get_is_charging(libusb_device_handle* device_handle)
 int main(int argc, char* argv[])
 {
     libusb_context* context = nullptr;
-    libusb_init(&context);
+    auto res = libusb_init(&context);
+    if (res != LIBUSB_SUCCESS)
+    {
+        std::cerr << "Init failed" << std::endl;
+        return -1;
+    }
 
     auto device_handle = libusb_open_device_with_vid_pid(context, 0x1532, 0x007b);
     if (device_handle == nullptr)
@@ -121,12 +131,19 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    double battery_level = get_battery_level(device_handle);
-    bool is_charging = get_is_charging(device_handle);
-    std::cout << std::format("Battery level: {}\nIs charging: {}", battery_level, is_charging) << std::endl;
+    try
+    {
+        double battery_level = get_battery_level(device_handle);
+        bool is_charging = get_is_charging(device_handle);
+
+        std::cout << std::format(R"({{"BatteryLevel": {}, "IsCharging": {}}})", battery_level, is_charging) << std::endl;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << std::format("Error: {}", e.what()) << std::endl;
+    }
 
     libusb_close(device_handle);
-
     libusb_exit(context);
 
     return 0;
