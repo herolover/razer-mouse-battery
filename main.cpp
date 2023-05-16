@@ -120,14 +120,14 @@ int main(int argc, char* argv[])
     auto res = libusb_init(&context);
     if (res != LIBUSB_SUCCESS)
     {
-        std::cerr << "Init failed" << std::endl;
+        std::cout << std::format(R"({{"Status": "Error", "Reason": "Init failed"}})") << std::endl;
         return -1;
     }
 
     auto device_handle = libusb_open_device_with_vid_pid(context, 0x1532, 0x007b);
     if (device_handle == nullptr)
     {
-        std::cerr << "Device not found" << std::endl;
+        std::cout << std::format(R"({{"Status": "Error", "Reason": "Mouse not found"}})") << std::endl;
         return -1;
     }
 
@@ -136,11 +136,11 @@ int main(int argc, char* argv[])
         double battery_level = get_battery_level(device_handle);
         bool is_charging = get_is_charging(device_handle);
 
-        std::cout << std::format(R"({{"BatteryLevel": {}, "IsCharging": {}}})", battery_level, is_charging) << std::endl;
+        std::cout << std::format(R"({{"Status": "OK", "BatteryLevel": {}, "IsCharging": {}}})", battery_level, is_charging) << std::endl;
     }
     catch (const std::exception& e)
     {
-        std::cerr << std::format("Error: {}", e.what()) << std::endl;
+        std::cout << std::format(R"({{"Status": "Error", "Reason": "{}"}})", e.what()) << std::endl;
     }
 
     libusb_close(device_handle);
