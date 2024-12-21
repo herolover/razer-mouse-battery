@@ -104,14 +104,20 @@ razer_report send_request(libusb_device_handle* device_handle, unsigned char com
 
 double get_battery_level(libusb_device_handle* device_handle)
 {
-    auto response = send_request(device_handle, 0x07, 0x80, 0x02);
+    const auto response = send_request(device_handle, 0x07, 0x80, 0x02);
     return response.arguments[1] / 255.0 * 100.0;
 }
 
 bool get_is_charging(libusb_device_handle* device_handle)
 {
-    auto response = send_request(device_handle, 0x07, 0x84, 0x02);
+    const auto response = send_request(device_handle, 0x07, 0x84, 0x02);
     return response.arguments[1] != 0;
+}
+
+bool get_is_idle(libusb_device_handle* device_handle)
+{
+    const auto response = send_request(device_handle, 0x07, 0x83, 0x02);
+    return response.arguments[1] == 0;
 }
 
 int main(int argc, char* argv[])
@@ -133,10 +139,11 @@ int main(int argc, char* argv[])
 
     try
     {
-        double battery_level = get_battery_level(device_handle);
-        bool is_charging = get_is_charging(device_handle);
+        const auto battery_level = get_battery_level(device_handle);
+        const auto is_charging = get_is_charging(device_handle);
+        const auto is_idle = get_is_idle(device_handle);
 
-        std::cout << std::format(R"({{"Status": "OK", "BatteryLevel": {}, "IsCharging": {}}})", battery_level, is_charging) << std::endl;
+        std::cout << std::format(R"({{"Status": "OK", "BatteryLevel": {}, "IsCharging": {}, "IsIdle": {}}})", battery_level, is_charging, is_idle) << std::endl;
     }
     catch (const std::exception& e)
     {
