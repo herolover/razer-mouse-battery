@@ -5,12 +5,11 @@ import paho.mqtt.client as mqtt
 
 MQTT_BROKER = "homelab"
 MQTT_PORT = 1883
-MQTT_BATTERY_LEVEL_TOPIC = "heroloverpc/mouse/battery/level"
-MQTT_IS_CHARGING_TOPIC = "heroloverpc/mouse/battery/is_charging"
+MQTT_BATTERY_STATE_TOPIC = "heroloverpc/mouse/battery/state"
 
 UTILITY_PATH = "C:/Users/anton/Projects/my/razer-mouse-battery/build/Release/razer-mouse-battery.exe"
 
-def get_battery_level():
+def get_battery_state():
     try:
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -19,28 +18,25 @@ def get_battery_level():
         result = subprocess.run(UTILITY_PATH, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, startupinfo=startupinfo)
         data = json.loads(result.stdout)
 
-        battery_level = data.get("BatteryLevel")
-        is_charging = data.get("IsCharging")
+        status = data.get("Status")
         is_idle = data.get("IsIdle")
-        if battery_level is not None and not is_idle:
-            return (round(battery_level, 1), is_charging)
+        if status == "OK" and not is_idle:
+            return result.stdout
 
     except Exception as e:
         print(f"Error: {e}")
 
-    return (None, None)
+    return None
 
 def on_connect(client, userdata, flags, reason_code, properties):
     if reason_code != 0:
         return
 
-    (battery_level, is_charging) = get_battery_level()
-    if battery_level is not None:
-        payload="{\"state\": \"on\"}" if is_charging else "{\"state\": \"off\"}"
-        print(f"Publish: level: {battery_level}%, is_charging: {is_charging} {payload}")
+    payload = get_battery_state()
+    if payload is not None:
+        print(f"Publish: {payload}")
 
-        client.publish(MQTT_BATTERY_LEVEL_TOPIC, payload=battery_level)
-        client.publish(MQTT_IS_CHARGING_TOPIC, payload="{\"state\":\"ON\"}" if is_charging else "{\"state\":\"OFF\"}")
+        client.publish(MQTT_BATTERY_STATE_TOPIC, payload=payload)
 
     client.disconnect()
 
