@@ -1,3 +1,4 @@
 build/
+cmake-build/
 bin/
 CMakeUserPresets.json

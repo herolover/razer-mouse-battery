@@ -1,0 +1,11 @@
+[Unit]
+Description=Battery Level MQTT Publisher
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/herolover/projects/razer-mouse-battery/venv/bin/python /home/herolover/projects/razer-mouse-battery/publish-to-mqtt-openrazer.py
+
+[Install]
+WantedBy=default.target
